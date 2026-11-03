@@ -1,0 +1,24 @@
+# Skeleton derived from the old prod compose; add mem_limit/healthchecks/env_file for your environment.
+x-worker: &worker
+  build: .
+  env_file: .env
+  restart: unless-stopped
+services:
+  worker:
+    <<: *worker
+    command: celery -A config worker -Q default,orders,lark_noti,audit -l INFO --concurrency=${CELERY_WORKER_CONCURRENCY:-4}
+  worker-kiotviet:
+    <<: *worker
+    command: celery -A config worker -Q kiotviet -l INFO --concurrency=${KIOTVIET_WORKER_CONCURRENCY:-4}
+  worker-slow:
+    <<: *worker
+    command: celery -A config worker -Q slow -l INFO --concurrency=${SLOW_WORKER_CONCURRENCY:-2}
+  worker-export:
+    <<: *worker
+    command: celery -A config worker -Q exports -l INFO --concurrency=${EXPORT_WORKER_CONCURRENCY:-2}
+  worker-foxia:
+    <<: *worker
+    command: celery -A config worker -Q foxia -l INFO --concurrency=${FOXIA_WORKER_CONCURRENCY:-1}
+  beat:
+    <<: *worker
+    command: celery -A config beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler
